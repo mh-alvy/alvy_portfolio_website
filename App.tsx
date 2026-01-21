@@ -12,6 +12,7 @@ import Certificates from './components/Certificates';
 import Contact from './components/Contact';
 import BackgroundEffects from './components/BackgroundEffects';
 import CustomCursor from './components/CustomCursor';
+import { Mail, MapPin } from 'lucide-react';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -56,10 +57,23 @@ const App: React.FC = () => {
           </Routes>
         </AnimatePresence>
       </main>
-      <footer className="relative z-10 py-12 border-t border-white/5 bg-black/40 text-center">
-        <p className="text-gray-500 font-light">
-          © {new Date().getFullYear()} <span className="text-cyan-400 font-semibold">Mahamudul Hasan Alvy</span>. Designed with Neon & Logic.
-        </p>
+      <footer className="relative z-10 py-16 border-t border-white/5 bg-black/60 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col items-center gap-8">
+          <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+            <div className="flex items-center gap-3 text-gray-400">
+              <Mail size={18} className="text-cyan-400" />
+              <span className="text-sm font-medium">mhalvytech24@gmail.com</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-400">
+              <MapPin size={18} className="text-purple-400" />
+              <span className="text-sm font-medium">Comilla, Bangladesh</span>
+            </div>
+          </div>
+          <div className="w-full max-w-md h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+          <p className="text-gray-500 font-light text-sm text-center">
+            © 2026 <span className="text-cyan-400 font-bold uppercase tracking-wider">Mahamudul Hasan Alvy</span>. All rights reserved.
+          </p>
+        </div>
       </footer>
     </div>
   );

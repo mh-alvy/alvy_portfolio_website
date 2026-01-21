@@ -1,10 +1,47 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import SectionTitle from './SectionTitle';
-import { Mail, MapPin, Send, Instagram, Facebook, Github, Linkedin } from 'lucide-react';
+import { SOCIAL_LINKS } from '../constants';
+import { 
+  Mail, 
+  MapPin, 
+  Send, 
+  Github, 
+  Linkedin, 
+  Briefcase, 
+  Palette, 
+  Facebook, 
+  Instagram, 
+  MessageCircle 
+} from 'lucide-react';
 
 const Contact: React.FC = () => {
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'briefcase': return <Briefcase size={22} />;
+      case 'linkedin': return <Linkedin size={22} />;
+      case 'palette': return <Palette size={22} />;
+      case 'github': return <Github size={22} />;
+      case 'facebook': return <Facebook size={22} />;
+      case 'instagram': return <Instagram size={22} />;
+      case 'message-circle': return <MessageCircle size={22} />;
+      default: return <Github size={22} />;
+    }
+  };
+
+  const getColor = (name: string) => {
+    switch (name.toLowerCase()) {
+      case 'fiverr': return '#1dbf73';
+      case 'linkedin': return '#0077b5';
+      case 'behance': return '#0057ff';
+      case 'github': return '#ffffff';
+      case 'facebook': return '#1877f2';
+      case 'instagram': return '#e4405f';
+      case 'whatsapp': return '#25d366';
+      default: return '#00f2ff';
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto">
       <SectionTitle title="GET IN TOUCH" subtitle="Let's Build Something Legendary" />
@@ -29,7 +66,9 @@ const Contact: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Email Me</p>
-                <p className="text-lg font-bold text-white">hello@alvy.tech</p>
+                <a href="mailto:mhalvytech24@gmail.com" className="text-lg font-bold text-white hover:text-cyan-400 transition-colors">
+                  mhalvytech24@gmail.com
+                </a>
               </div>
             </div>
 
@@ -39,22 +78,29 @@ const Contact: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Location</p>
-                <p className="text-lg font-bold text-white">Chittagong, Bangladesh</p>
+                <p className="text-lg font-bold text-white">Comilla, Bangladesh</p>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-4 pt-6">
-            {[Github, Linkedin, Instagram, Facebook].map((Icon, i) => (
-              <motion.a
-                key={i}
-                href="#"
-                whileHover={{ y: -5, backgroundColor: 'rgba(255,255,255,0.1)' }}
-                className="p-4 glass rounded-2xl text-gray-400 hover:text-cyan-400 transition-colors"
-              >
-                <Icon size={20} />
-              </motion.a>
-            ))}
+          <div className="flex flex-wrap gap-4 pt-6">
+            {SOCIAL_LINKS.map((link) => {
+              const color = getColor(link.name);
+              return (
+                <motion.a
+                  key={link.name}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ y: -8, scale: 1.05 }}
+                  className="p-4 glass rounded-2xl text-gray-400 hover:text-white transition-all duration-300 border border-transparent"
+                >
+                  <div style={{ color: color }}>
+                    {getIcon(link.icon)}
+                  </div>
+                </motion.a>
+              );
+            })}
           </div>
         </div>
 

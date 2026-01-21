@@ -24,6 +24,7 @@ export interface Experience {
   skills?: string[];
   link?: { text: string; url: string };
   image?: string;
+  logo?: string;
   color: 'cyan' | 'purple' | 'green' | 'red';
 }
 
@@ -35,7 +36,9 @@ export interface Education {
   description?: string;
   activities?: string;
   skills?: string[];
+  logo?: string;
   image?: string;
+  attachmentTitle?: string;
   color: 'cyan' | 'purple' | 'green' | 'red';
 }
 
