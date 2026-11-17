@@ -1,4 +1,5 @@
 import { Project, Skill, Experience, Certificate, Education } from './types';
+import { PROFILE_IMAGE_BASE64 } from './profile_image';
 
 export const PERSONAL_INFO = {
   name: "Mahamudul Hasan Alvy",
@@ -146,7 +147,7 @@ export const EXPERIENCES: Experience[] = [
     ],
     skills: ["Web Development", "System Design & Development", "Technical Lead", "Teaching", "Leadership", "Technical Strategy"],
     logo: "https://i.ibb.co/L6V2f3P/btf-logo.png",
-    image: "https://iili.io/frFRNcl.jpg",
+    image: PROFILE_IMAGE_BASE64,
     color: 'cyan'
   },
   {

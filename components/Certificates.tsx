@@ -2,89 +2,96 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { CERTIFICATES } from '../constants';
 import SectionTitle from './SectionTitle';
-import { Award, ShieldCheck, ExternalLink, Sparkles } from 'lucide-react';
+import { Award, ShieldCheck, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react';
+import { sounds } from '../utils/soundEffects';
 
 const Certificates: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto">
-      <SectionTitle title="CERTIFICATIONS" subtitle="Verified Professional Expertise" />
+      <SectionTitle 
+        title="VERIFIED CREDENTIALS" 
+        subtitle="Industry Certifications & Professional Accreditations" 
+        badge="SECURITY VERIFIED"
+      />
 
-      <div className="grid gap-8 mt-12">
+      <div className="grid md:grid-cols-2 gap-8 mt-12">
         {CERTIFICATES.map((cert, i) => (
           <motion.div
             key={cert.title + i}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 25 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="group glass p-8 md:p-10 rounded-3xl border-l-4 border-purple-500 hover:bg-white/[0.04] transition-all duration-500 shadow-xl"
+            transition={{ delay: i * 0.08 }}
+            className="group relative glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 cyber-corner hover:border-purple-500/40 transition-all duration-300 shadow-xl flex flex-col justify-between"
           >
-            <div className="flex flex-col gap-6">
-              {/* Header Info */}
-              <div className="space-y-3">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <h4 className="text-xl md:text-2xl font-black text-white group-hover:text-purple-400 transition-colors leading-tight font-heading uppercase tracking-tight">
-                    {cert.title}
-                  </h4>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 whitespace-nowrap self-start">
-                    Issued {cert.date}
-                  </span>
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  <p className="text-base font-bold text-purple-300/80">
-                    {cert.issuer}
-                  </p>
-                  
-                  {cert.credentialId && (
-                    <div className="flex items-center gap-2 text-[10px] text-gray-500 font-mono-code uppercase tracking-widest bg-white/5 w-fit px-3 py-1 rounded-md">
-                      <ShieldCheck size={12} className="text-purple-500" />
-                      Credential ID {cert.credentialId}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <div>
-                <motion.a
-                  href={cert.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full border-2 border-purple-500/30 text-white font-bold text-xs hover:bg-purple-500/10 hover:border-purple-500/60 transition-all duration-300"
-                >
-                  Show credential
-                  <ExternalLink size={14} />
-                </motion.a>
-              </div>
-
-              {/* Skills Section - Mirroring Screenshot Layout */}
-              {cert.skills && (
-                <div className="pt-6 border-t border-white/5 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Sparkles size={12} className="text-purple-400 opacity-60" />
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Skills:</span>
+            <div className="space-y-5">
+              {/* Top Certificate Header */}
+              <div className="flex items-start justify-between gap-4 pb-4 border-b border-white/10">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shrink-0">
+                    <Award size={22} />
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    {cert.skills.map((skill, sIdx) => (
-                      <React.Fragment key={skill}>
-                        <span className="text-[11px] font-bold text-gray-300 hover:text-white transition-colors cursor-default">
-                          {skill}
-                        </span>
-                        {sIdx < cert.skills.length - 1 && (
-                          <span className="text-gray-600 font-black">·</span>
-                        )}
-                      </React.Fragment>
+                  <div>
+                    <span className="text-[10px] font-mono-code font-bold uppercase tracking-wider text-purple-400 block">
+                      {cert.issuer}
+                    </span>
+                    <h4 className="text-lg sm:text-xl font-black text-white font-heading tracking-tight leading-snug group-hover:text-purple-300 transition-colors">
+                      {cert.title}
+                    </h4>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-mono-code font-bold text-gray-400 bg-black/50 px-2.5 py-1 rounded-lg border border-white/10 whitespace-nowrap shrink-0">
+                  {cert.date}
+                </span>
+              </div>
+
+              {/* Credential ID Badge */}
+              {cert.credentialId && (
+                <div className="flex items-center gap-2 text-[11px] font-mono-code text-gray-400 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5 w-fit">
+                  <ShieldCheck size={14} className="text-emerald-400" />
+                  <span>ID: <strong className="text-white">{cert.credentialId}</strong></span>
+                </div>
+              )}
+
+              {/* Skills Covered */}
+              {cert.skills && (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-mono-code text-gray-500 uppercase tracking-widest block">
+                    COMPETENCIES ASSESSED
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {cert.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="text-[10px] font-mono-code text-gray-300 bg-white/5 px-2 py-0.5 rounded border border-white/5"
+                      >
+                        {skill}
+                      </span>
                     ))}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Subtle background decoration */}
-            <div className="absolute -right-4 -bottom-4 opacity-[0.03] pointer-events-none group-hover:opacity-[0.06] transition-opacity duration-1000 text-purple-500">
-              <Award size={180} strokeWidth={0.5} />
+            {/* Verification Link Button */}
+            <div className="pt-6 mt-6 border-t border-white/5 flex items-center justify-between">
+              <span className="text-[10px] font-mono-code text-emerald-400 flex items-center gap-1.5 font-bold">
+                <CheckCircle2 size={12} />
+                AUTHENTICATED
+              </span>
+
+              <a
+                href={cert.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => sounds.playClick()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:border-purple-400 text-xs font-mono-code font-bold transition-all"
+                data-cursor="VERIFY"
+              >
+                <span>VERIFY</span>
+                <ExternalLink size={12} />
+              </a>
             </div>
           </motion.div>
         ))}
