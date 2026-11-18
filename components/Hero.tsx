@@ -229,7 +229,7 @@ const Hero: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="lg:col-span-6 relative flex flex-col items-center justify-center min-h-[400px] sm:min-h-[440px] lg:min-h-[450px] xl:min-h-[480px] px-2 sm:px-4"
+          className="lg:col-span-6 relative flex flex-col items-center justify-center min-h-[260px] sm:min-h-[340px] lg:min-h-[450px] xl:min-h-[480px] px-2 sm:px-4"
         >
           {/* Ambient Cyber Aura Radiating Directly Behind Alvy (No Card Borders) */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] sm:w-[360px] lg:w-[400px] h-[280px] sm:h-[360px] lg:h-[400px] rounded-full bg-gradient-to-tr from-cyan-500/20 via-purple-600/20 to-pink-500/15 blur-3xl opacity-60 pointer-events-none animate-pulse" />
@@ -312,7 +312,7 @@ const Hero: React.FC = () => {
                   fetchPriority="high"
                   loading="eager"
                   decoding="async"
-                  className="relative z-10 w-auto h-[320px] sm:h-[380px] lg:h-[430px] xl:h-[460px] max-w-full object-contain object-bottom filter contrast-[1.06] brightness-[1.02] transition-all duration-300 pointer-events-none"
+                  className="relative z-10 w-auto h-[260px] sm:h-[340px] lg:h-[430px] xl:h-[460px] max-w-full object-contain object-bottom filter contrast-[1.06] brightness-[1.02] transition-all duration-300 pointer-events-none"
                   style={{
                     filter: 'drop-shadow(0 0 35px rgba(0, 242, 255, 0.4)) drop-shadow(0 15px 40px rgba(0, 0, 0, 0.95))',
                     maskImage: 'linear-gradient(to bottom, black 84%, transparent 99%)',
@@ -553,7 +553,7 @@ const Hero: React.FC = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 sm:gap-2.5">
           {SOCIAL_LINKS.map((link) => {
             const color = getColor(link.name);
             return (
@@ -563,7 +563,7 @@ const Hero: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => sounds.playClick()}
-                className="group relative p-2.5 rounded-xl bg-[#080816]/80 hover:bg-[#101026] border border-white/5 hover:border-white/20 transition-all duration-300 flex items-center gap-2.5 overflow-hidden shadow-lg"
+                className="group relative p-1.5 sm:p-2.5 rounded-xl bg-[#080816]/80 hover:bg-[#101026] border border-white/5 hover:border-white/20 transition-all duration-300 flex items-center gap-1.5 sm:gap-2.5 overflow-hidden shadow-lg"
                 data-cursor={link.name.toUpperCase()}
               >
                 {/* Glow accent bar */}
@@ -573,17 +573,17 @@ const Hero: React.FC = () => {
                 ></div>
 
                 <div
-                  className="p-1.5 rounded-lg bg-white/5 group-hover:scale-110 transition-transform shrink-0"
+                  className="p-1 sm:p-1.5 rounded-lg bg-white/5 group-hover:scale-110 transition-transform shrink-0"
                   style={{ color }}
                 >
                   {getIcon(link.icon)}
                 </div>
 
                 <div className="flex flex-col overflow-hidden">
-                  <span className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors truncate font-heading">
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-300 group-hover:text-white transition-colors truncate font-heading">
                     {link.name}
                   </span>
-                  <span className="text-[8px] font-mono-code text-gray-500 group-hover:text-cyan-400 transition-colors uppercase">
+                  <span className="text-[7px] sm:text-[8px] font-mono-code text-gray-500 group-hover:text-cyan-400 transition-colors uppercase">
                     Launch ↗
                   </span>
                 </div>
@@ -594,14 +594,14 @@ const Hero: React.FC = () => {
       </motion.div>
 
       {/* Down Scroll Arrow */}
-      <div className="flex justify-center mt-2">
+      <div className="flex justify-center mt-1">
         <button
           onClick={() => handleScrollTo('about')}
-          className="text-cyan-400/70 hover:text-cyan-300 transition-colors animate-bounce p-1"
+          className="text-cyan-400/70 hover:text-cyan-300 transition-colors animate-bounce p-0.5"
           title="Scroll down to Agent Dossier"
           data-cursor="NEXT_SEC"
         >
-          <ChevronDown size={18} />
+          <ChevronDown size={16} />
         </button>
       </div>
     </div>

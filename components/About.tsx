@@ -80,7 +80,7 @@ const About: React.FC = () => {
             </div>
 
             {/* Photo Container Frame with Laser Border */}
-            <div className="relative h-[260px] sm:h-[290px] lg:h-[300px] overflow-hidden rounded-2xl bg-black shadow-inner border border-white/10">
+            <div className="relative h-[200px] sm:h-[260px] lg:h-[300px] overflow-hidden rounded-2xl bg-black shadow-inner border border-white/10">
               <picture>
                 <source srcSet="/assets/aistudio/alvy_hero.webp" type="image/webp" />
                 <img

@@ -3,13 +3,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Terminal, Volume2, VolumeX, Sparkles, Radio } from 'lucide-react';
 import { sounds } from '../utils/soundEffects';
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  activeSection?: string;
+  onNavigate?: (id: string) => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ activeSection: parentActiveSection, onNavigate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [activeSection, setActiveSection] = useState('hero');
+  const [localActiveSection, setLocalActiveSection] = useState('hero');
   const [audioEnabled, setAudioEnabled] = useState(sounds.isEnabled());
   const [currentTime, setCurrentTime] = useState('');
+
+  const currentSection = parentActiveSection || localActiveSection;
 
   // Live Bangladesh time (UTC+6)
   useEffect(() => {
@@ -43,7 +50,7 @@ const Navbar: React.FC = () => {
         if (el) {
           const rect = el.getBoundingClientRect();
           if (rect.top <= 200) {
-            setActiveSection(section);
+            setLocalActiveSection(section);
             break;
           }
         }
@@ -68,11 +75,15 @@ const Navbar: React.FC = () => {
     e.preventDefault();
     sounds.playClick();
     const targetId = href.replace('#', '');
-    const element = document.getElementById(targetId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-      setIsOpen(false);
+    if (onNavigate) {
+      onNavigate(targetId);
+    } else {
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
+    setIsOpen(false);
   };
 
   const handleAudioToggle = () => {
@@ -95,7 +106,11 @@ const Navbar: React.FC = () => {
           onClick={(e) => {
             e.preventDefault();
             sounds.playClick();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (onNavigate) {
+              onNavigate('hero');
+            } else {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
           }}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -120,7 +135,7 @@ const Navbar: React.FC = () => {
         {/* Zone 2: Navigation Links */}
         <div className="hidden lg:flex items-center gap-1 xl:gap-2">
           {navItems.map((item, i) => {
-            const isActive = activeSection === item.id;
+            const isActive = currentSection === item.id;
             return (
               <motion.a
                 key={item.name}
@@ -229,7 +244,7 @@ const Navbar: React.FC = () => {
                   href={item.href}
                   onClick={(e) => handleNavClick(e, item.href)}
                   className={`px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider font-mono-code transition-colors flex items-center justify-between ${
-                    activeSection === item.id
+                    currentSection === item.id
                       ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
                       : 'text-gray-300 hover:text-white hover:bg-white/5'
                   }`}

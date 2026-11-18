@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
@@ -15,7 +15,13 @@ import CustomCursor from './components/CustomCursor';
 import { Terminal, ArrowUp } from 'lucide-react';
 import { sounds } from './utils/soundEffects';
 
-const SECTIONS = [
+interface SectionMeta {
+  id: string;
+  code: string;
+  label: string;
+}
+
+const SECTIONS: SectionMeta[] = [
   { id: 'hero', code: '01', label: 'COMMAND' },
   { id: 'about', code: '02', label: 'DOSSIER' },
   { id: 'education', code: '03', label: 'ACADEMICS' },
@@ -26,148 +32,284 @@ const SECTIONS = [
   { id: 'contact', code: '08', label: 'UPLINK' },
 ];
 
+interface TransitionState {
+  code: string;
+  label: string;
+  direction: 'down' | 'up';
+}
+
 const App: React.FC = () => {
   const location = useLocation();
   const [activeSection, setActiveSection] = useState('hero');
-  const [transitionBanner, setTransitionBanner] = useState<string | null>(null);
-  const isGlidingRef = useRef(false);
+  const [transitionState, setTransitionState] = useState<TransitionState | null>(null);
 
-  // Track active section and assist smooth section-to-section wheel transitions
+  const isGlidingRef = useRef(false);
+  const activeIndexRef = useRef(0);
+
+  // Unified section glide controller:
+  // Glides completely to the target section with a futuristic cyber laser wipe & telemetry HUD
+  const triggerSectionGlide = useCallback((targetIndex: number, direction?: 'down' | 'up') => {
+    if (targetIndex < 0 || targetIndex >= SECTIONS.length) return;
+    if (isGlidingRef.current) return;
+
+    const targetSec = SECTIONS[targetIndex];
+    const el = document.getElementById(targetSec.id);
+    if (!el) return;
+
+    const currentIdx = activeIndexRef.current;
+    if (targetIndex === currentIdx && isGlidingRef.current) return;
+
+    const dir = direction || (targetIndex > currentIdx ? 'down' : 'up');
+
+    isGlidingRef.current = true;
+    activeIndexRef.current = targetIndex;
+    setActiveSection(targetSec.id);
+
+    setTransitionState({
+      code: targetSec.code,
+      label: targetSec.label,
+      direction: dir,
+    });
+
+    sounds.playScan();
+
+    window.scrollTo({
+      top: el.offsetTop,
+      behavior: 'smooth',
+    });
+
+    setTimeout(() => {
+      setTransitionState(null);
+    }, 650);
+
+    setTimeout(() => {
+      isGlidingRef.current = false;
+    }, 750);
+  }, []);
+
+  // Universal gesture listeners: every single scroll/swipe/key initiates full section transition
   useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Allow scrolling inside dialogs or sub-containers marked with .allow-inner-scroll
+      if ((e.target as HTMLElement)?.closest?.('.allow-inner-scroll')) {
+        return;
+      }
+
+      e.preventDefault();
+
+      if (isGlidingRef.current) return;
+      if (Math.abs(e.deltaY) < 18) return;
+
+      const currentIdx = activeIndexRef.current;
+      if (e.deltaY > 0 && currentIdx < SECTIONS.length - 1) {
+        triggerSectionGlide(currentIdx + 1, 'down');
+      } else if (e.deltaY < 0 && currentIdx > 0) {
+        triggerSectionGlide(currentIdx - 1, 'up');
+      }
+    };
+
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let touchStartTime = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+      touchStartTime = Date.now();
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if ((e.target as HTMLElement)?.closest?.('.allow-inner-scroll')) {
+        return;
+      }
+      if (isGlidingRef.current && e.cancelable) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.changedTouches.length !== 1) return;
+      if ((e.target as HTMLElement)?.closest?.('.allow-inner-scroll')) {
+        return;
+      }
+
+      const touchEndY = e.changedTouches[0].clientY;
+      const touchEndX = e.changedTouches[0].clientX;
+      const deltaY = touchStartY - touchEndY;
+      const deltaX = touchStartX - touchEndX;
+      const duration = Date.now() - touchStartTime;
+
+      // Vertical swipe detection (>35px displacement, primarily vertical, within 900ms)
+      if (Math.abs(deltaY) > 35 && Math.abs(deltaY) > Math.abs(deltaX) && duration < 900) {
+        if (isGlidingRef.current) return;
+        const currentIdx = activeIndexRef.current;
+        if (deltaY > 0 && currentIdx < SECTIONS.length - 1) {
+          triggerSectionGlide(currentIdx + 1, 'down');
+        } else if (deltaY < 0 && currentIdx > 0) {
+          triggerSectionGlide(currentIdx - 1, 'up');
+        }
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+
+      if (isGlidingRef.current) return;
+      const currentIdx = activeIndexRef.current;
+
+      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+        if (currentIdx < SECTIONS.length - 1) {
+          e.preventDefault();
+          triggerSectionGlide(currentIdx + 1, 'down');
+        }
+      } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        if (currentIdx > 0) {
+          e.preventDefault();
+          triggerSectionGlide(currentIdx - 1, 'up');
+        }
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        triggerSectionGlide(0, 'up');
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        triggerSectionGlide(SECTIONS.length - 1, 'down');
+      }
+    };
+
     const handleScroll = () => {
-      const scrollCenter = window.scrollY + window.innerHeight * 0.42;
+      if (isGlidingRef.current) return;
+      const scrollMid = window.scrollY + window.innerHeight * 0.4;
       for (let i = SECTIONS.length - 1; i >= 0; i--) {
         const el = document.getElementById(SECTIONS[i].id);
-        if (el && el.offsetTop <= scrollCenter) {
-          setActiveSection(SECTIONS[i].id);
+        if (el && el.offsetTop <= scrollMid) {
+          if (activeIndexRef.current !== i) {
+            activeIndexRef.current = i;
+            setActiveSection(SECTIONS[i].id);
+          }
           break;
         }
       }
     };
 
-    const triggerSectionGlide = (targetIndex: number) => {
-      if (targetIndex < 0 || targetIndex >= SECTIONS.length) return;
-      const targetSec = SECTIONS[targetIndex];
-      const el = document.getElementById(targetSec.id);
-      if (!el) return;
-
-      isGlidingRef.current = true;
-      setActiveSection(targetSec.id);
-      setTransitionBanner(`${targetSec.code} // ${targetSec.label}`);
-
-      const navbarOffset = targetSec.id === 'hero' ? 0 : 72;
-      const targetTop = Math.max(0, el.offsetTop - navbarOffset);
-
-      window.scrollTo({
-        top: targetTop,
-        behavior: 'smooth',
-      });
-
-      setTimeout(() => {
-        setTransitionBanner(null);
-      }, 650);
-
-      setTimeout(() => {
-        isGlidingRef.current = false;
-      }, 800);
-    };
-
-    const handleWheel = (e: WheelEvent) => {
-      // Only use full-viewport glide on desktop screens where sections are locked to 100dvh
-      if (
-        window.innerWidth < 768 ||
-        'ontouchstart' in window ||
-        navigator.maxTouchPoints > 0
-      ) return;
-      if (isGlidingRef.current) {
-        e.preventDefault();
-        return;
-      }
-      // Ignore tiny trackpad jitter
-      if (Math.abs(e.deltaY) < 22) return;
-
-      const currentIndex = SECTIONS.findIndex((s) => s.id === activeSection);
-      if (currentIndex === -1) return;
-
-      const currentEl = document.getElementById(SECTIONS[currentIndex].id);
-      if (!currentEl) return;
-
-      const rect = currentEl.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-
-      if (e.deltaY > 0 && currentIndex < SECTIONS.length - 1) {
-        const distanceToSectionBottom = rect.bottom - viewportHeight;
-        if (distanceToSectionBottom <= 95) {
-          e.preventDefault();
-          triggerSectionGlide(currentIndex + 1);
-        }
-      } else if (e.deltaY < 0 && currentIndex > 0) {
-        const distanceToSectionTop = rect.top;
-        if (distanceToSectionTop >= -75) {
-          e.preventDefault();
-          triggerSectionGlide(currentIndex - 1);
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('wheel', handleWheel, { passive: false });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('wheel', handleWheel);
-    };
-  }, [activeSection]);
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
-  const handleScrollTop = () => {
-    sounds.playClick();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [triggerSectionGlide]);
+
+  const handleNavNavigate = (targetId: string) => {
+    const idx = SECTIONS.findIndex((s) => s.id === targetId);
+    if (idx !== -1) {
+      triggerSectionGlide(idx);
+    }
   };
 
-  const handleJumpSection = (sec: typeof SECTIONS[0]) => {
-    sounds.playClick();
-    const el = document.getElementById(sec.id);
-    if (!el) return;
-    setTransitionBanner(`${sec.code} // ${sec.label}`);
-    const navbarOffset = sec.id === 'hero' ? 0 : 72;
-    window.scrollTo({
-      top: Math.max(0, el.offsetTop - navbarOffset),
-      behavior: 'smooth',
-    });
-    setTimeout(() => setTransitionBanner(null), 650);
+  const handleScrollTop = () => {
+    triggerSectionGlide(0, 'up');
   };
 
   return (
     <div className="relative min-h-screen bg-[#03030c] text-slate-100 overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
       <CustomCursor />
       <BackgroundEffects />
-      <Navbar />
+      <Navbar activeSection={activeSection} onNavigate={handleNavNavigate} />
 
-      {/* Section Transition HUD Telemetry Toast */}
+      {/* Cyber Laser Warp Beam and HUD Telemetry Pill on Every Section Transition */}
       <AnimatePresence>
-        {transitionBanner && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -15, scale: 0.95 }}
-            transition={{ duration: 0.25 }}
-            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[9000] pointer-events-none px-4 py-1.5 rounded-full bg-[#060618]/90 border border-cyan-400/50 backdrop-blur-md shadow-[0_0_25px_rgba(0,242,255,0.4)] flex items-center gap-2.5"
-          >
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-[10px] font-mono-code font-extrabold tracking-[0.25em] text-cyan-300 uppercase">
-              SECTOR SHIFT // {transitionBanner}
-            </span>
-          </motion.div>
+        {transitionState && (
+          <React.Fragment key="section-transition-system">
+            {/* Directional Cyber Laser Wipe Beam */}
+            <motion.div
+              key={`warp-beam-${transitionState.direction}`}
+              initial={{
+                top: transitionState.direction === 'down' ? '-10%' : '110%',
+                opacity: 0,
+              }}
+              animate={{
+                top: transitionState.direction === 'down' ? '110%' : '-10%',
+                opacity: [0, 1, 1, 0],
+              }}
+              transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed left-0 right-0 z-[8000] pointer-events-none"
+            >
+              <div
+                className={`w-full h-[3px] bg-gradient-to-r ${
+                  transitionState.direction === 'down'
+                    ? 'from-transparent via-cyan-400 to-transparent shadow-[0_0_20px_#00f2ff,0_0_40px_#bc13fe,0_0_80px_#00f2ff]'
+                    : 'from-transparent via-purple-400 to-transparent shadow-[0_0_20px_#bc13fe,0_0_40px_#00f2ff,0_0_80px_#bc13fe]'
+                }`}
+              />
+              <div
+                className={`w-full h-32 -mt-16 bg-gradient-to-b ${
+                  transitionState.direction === 'down'
+                    ? 'from-transparent via-cyan-500/20 to-transparent'
+                    : 'from-transparent via-purple-500/20 to-transparent'
+                } blur-md`}
+              />
+            </motion.div>
+
+            {/* Instantaneous Quantum Scanline Flash */}
+            <motion.div
+              key="warp-flash"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.22, 0] }}
+              transition={{ duration: 0.35 }}
+              className="fixed inset-0 z-[7999] pointer-events-none bg-gradient-to-b from-cyan-500/15 via-purple-500/10 to-cyan-500/15"
+            />
+
+            {/* HUD Telemetry Sector Shift Badge */}
+            <motion.div
+              key="hud-badge"
+              initial={{
+                opacity: 0,
+                y: transitionState.direction === 'down' ? 24 : -24,
+                scale: 0.9,
+              }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{
+                opacity: 0,
+                y: transitionState.direction === 'down' ? -16 : 16,
+                scale: 0.95,
+              }}
+              transition={{ duration: 0.25 }}
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[8500] pointer-events-none px-5 py-2 rounded-2xl bg-[#030312]/95 border border-cyan-400/60 shadow-[0_0_35px_rgba(0,242,255,0.45)] backdrop-blur-xl flex items-center gap-3"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] font-mono-code font-extrabold tracking-[0.25em] text-cyan-300 uppercase">
+                  SECTOR SHIFT // {transitionState.code}
+                </span>
+                <span className="text-xs sm:text-sm font-heading font-black tracking-widest text-white uppercase">
+                  {transitionState.label}
+                </span>
+              </div>
+              <div className="w-2 h-2 rotate-45 bg-purple-500 shadow-[0_0_10px_#bc13fe]" />
+            </motion.div>
+          </React.Fragment>
         )}
       </AnimatePresence>
 
       {/* Right-Side Floating Section Pager Rail */}
       <div className="hidden xl:flex fixed right-5 top-1/2 -translate-y-1/2 z-40 flex-col items-end gap-3">
-        {SECTIONS.map((sec) => {
+        {SECTIONS.map((sec, idx) => {
           const isActive = activeSection === sec.id;
           return (
             <button
               key={sec.id}
-              onClick={() => handleJumpSection(sec)}
+              onClick={() => triggerSectionGlide(idx)}
               data-cursor={sec.label}
               className="group flex items-center gap-2.5 py-0.5 focus:outline-none"
             >
@@ -210,10 +352,9 @@ interface ViewportFitSectionProps {
 }
 
 /**
- * ViewportFitSection guarantees that on any screen size (laptop, desktop, ultrawide, tablet),
- * each section's block fits 100% inside the visible screen height (100dvh minus navbar)
- * without its bottom portion ever getting cut off or overflowing outside the screen.
- * On mobile phones, it renders immediately with zero opacity/blur traps so there is never a black screen.
+ * ViewportFitSection guarantees that on ANY screen size (phones, tablets, laptops, ultrawides),
+ * each section fits 100% inside the visible screen height (100dvh) without its bottom
+ * or sides ever getting cut off or overflowing outside the screen.
  */
 const ViewportFitSection: React.FC<ViewportFitSectionProps> = ({
   id,
@@ -222,67 +363,88 @@ const ViewportFitSection: React.FC<ViewportFitSectionProps> = ({
   showDivider = true,
   isHero = false,
 }) => {
+  const containerRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
+  const calculateFit = useCallback(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    // Reset transform to measure unscaled natural dimensions
+    content.style.transform = 'none';
+
+    const naturalHeight = content.scrollHeight;
+    const naturalWidth = content.scrollWidth;
+
+    const vh = window.innerHeight;
+    const vw = window.innerWidth;
+
+    // Clearance for fixed navbar and top/bottom padding
+    const navHeight = isHero ? (vw < 768 ? 58 : 72) : (vw < 768 ? 64 : 76);
+    const verticalSafetyPadding = vw < 768 ? 16 : 24;
+    const horizontalSafetyPadding = vw < 768 ? 16 : 36;
+
+    const availableHeight = Math.max(260, vh - navHeight - verticalSafetyPadding);
+    const availableWidth = Math.max(280, vw - horizontalSafetyPadding);
+
+    const scaleY = naturalHeight > availableHeight ? availableHeight / naturalHeight : 1;
+    const scaleX = naturalWidth > availableWidth ? availableWidth / naturalWidth : 1;
+
+    // Minimum scale guarantees neither vertical nor horizontal overflow occurs
+    let fitScale = Math.min(1, scaleY, scaleX);
+
+    // Limit floor to maintain high readability
+    fitScale = Math.max(0.44, Number(fitScale.toFixed(3)));
+
+    setScale(fitScale);
+    content.style.transform = fitScale < 1 ? `scale(${fitScale})` : '';
+  }, [isHero]);
+
   useEffect(() => {
-    // Mobile devices use natural vertical document flow without scaling
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return;
+    calculateFit();
+
+    const resizeObserver = new ResizeObserver(() => {
+      calculateFit();
+    });
+
+    if (contentRef.current) {
+      resizeObserver.observe(contentRef.current);
     }
+    window.addEventListener('resize', calculateFit);
+    window.addEventListener('orientationchange', calculateFit);
 
-    const updateScale = () => {
-      const el = contentRef.current;
-      if (!el || window.innerWidth < 768) {
-        setScale(1);
-        return;
-      }
-
-      const navbarHeight = 76;
-      const verticalBreathingRoom = 20;
-      const availableHeight = window.innerHeight - navbarHeight - verticalBreathingRoom;
-      const naturalHeight = el.offsetHeight;
-
-      if (naturalHeight > availableHeight && availableHeight > 320) {
-        const nextScale = Math.max(0.66, Number((availableHeight / naturalHeight).toFixed(3)));
-        setScale(nextScale);
-      } else {
-        setScale(1);
-      }
-    };
-
-    updateScale();
-    window.addEventListener('resize', updateScale);
     return () => {
-      window.removeEventListener('resize', updateScale);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', calculateFit);
+      window.removeEventListener('orientationchange', calculateFit);
     };
-  }, []);
+  }, [calculateFit]);
 
   return (
     <section
+      ref={containerRef}
       id={id}
-      className={`relative overflow-x-hidden md:overflow-hidden flex flex-col justify-center ${
-        isHero
-          ? 'min-h-screen md:min-h-dvh md:h-dvh pt-20 pb-6 md:pb-3 px-4 sm:px-6'
-          : 'py-10 md:py-4 md:min-h-[calc(100dvh-72px)] md:h-[calc(100dvh-72px)] px-4 sm:px-6'
-      } ${className}`}
+      className={`relative w-full h-dvh max-h-dvh min-h-dvh overflow-hidden flex flex-col items-center justify-center snap-start snap-always ${
+        isHero ? 'pt-14 sm:pt-20 pb-2 sm:pb-4' : 'pt-16 sm:pt-20 pb-2 sm:pb-4'
+      } px-3 sm:px-6 ${className}`}
     >
       {showDivider && (
-        <div className="max-w-7xl w-full mx-auto px-6 absolute top-0 left-1/2 -translate-x-1/2 z-20">
+        <div className="max-w-7xl w-full mx-auto px-6 absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
           <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent relative">
             <span className="absolute left-1/2 -top-1 -translate-x-1/2 w-2 h-2 rotate-45 bg-cyan-400/80 shadow-[0_0_10px_#00f2ff]" />
           </div>
         </div>
       )}
 
-      <div className="w-full flex items-center justify-center flex-1">
+      <div className="w-full h-full flex items-center justify-center overflow-hidden">
         <div
           ref={contentRef}
           style={{
             transform: scale < 1 ? `scale(${scale})` : undefined,
             transformOrigin: 'center center',
           }}
-          className="w-full transition-transform duration-200"
+          className="w-full max-w-7xl mx-auto flex flex-col justify-center transition-transform duration-200 will-change-transform"
         >
           {children}
         </div>

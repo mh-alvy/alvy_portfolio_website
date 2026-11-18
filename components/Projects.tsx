@@ -289,7 +289,7 @@ const Projects: React.FC = () => {
               </div>
 
               {/* Modal Media Body */}
-              <div className="overflow-y-auto p-6 space-y-6">
+              <div className="overflow-y-auto p-6 space-y-6 allow-inner-scroll">
                 <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl">
                   {selectedProject.embedUrl ? (
                     <iframe
