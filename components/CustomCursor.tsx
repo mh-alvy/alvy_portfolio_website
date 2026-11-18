@@ -15,7 +15,14 @@ const CustomCursor: React.FC = () => {
   const [hoverText, setHoverText] = useState<string | null>(null);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const [pulses, setPulses] = useState<ClickPulse[]>([]);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isTouchDevice] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0 ||
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches
+    );
+  });
 
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
@@ -31,13 +38,7 @@ const CustomCursor: React.FC = () => {
   const trailY = useSpring(mouseY, slowSpring);
 
   useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia('(hover: none) and (pointer: coarse)').matches
-    ) {
-      setIsTouchDevice(true);
-      return;
-    }
+    if (isTouchDevice) return;
 
     let frameId: number | null = null;
 

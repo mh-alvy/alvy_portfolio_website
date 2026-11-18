@@ -37,8 +37,11 @@ const BackgroundEffects: React.FC = () => {
     window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-    // Generate balanced density of cyber nodes
-    const particleCount = Math.min(Math.floor((width * height) / 18000), 75);
+    // Generate balanced density of cyber nodes (lightweight on mobile to prevent GPU lag)
+    const isMobile = width < 768;
+    const particleCount = isMobile
+      ? Math.min(Math.floor((width * height) / 32000), 22)
+      : Math.min(Math.floor((width * height) / 18000), 65);
     const particles: Particle[] = [];
     const colors = ['#00f2ff', '#7928ca', '#38bdf8', '#bc13fe', '#06b6d4'];
 
@@ -54,10 +57,15 @@ const BackgroundEffects: React.FC = () => {
       });
     }
 
-    const maxDistance = 140;
+    const maxDistance = isMobile ? 105 : 140;
     const mouseDistance = 180;
 
     const render = () => {
+      if (document.hidden) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
 
       // Draw faint cyber grid marks at intersections
@@ -87,38 +95,42 @@ const BackgroundEffects: React.FC = () => {
         ctx.globalAlpha = p.alpha;
         ctx.fill();
 
-        // Connect nearby particles
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.hypot(dx, dy);
+        // Connect nearby particles (desktop only to eliminate mobile GPU lag)
+        if (!isMobile) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.hypot(dx, dy);
 
-          if (dist < maxDistance) {
-            const lineAlpha = (1 - dist / maxDistance) * 0.15;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = '#00f2ff';
-            ctx.globalAlpha = lineAlpha;
-            ctx.lineWidth = 0.75;
-            ctx.stroke();
+            if (dist < maxDistance) {
+              const lineAlpha = (1 - dist / maxDistance) * 0.15;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.strokeStyle = '#00f2ff';
+              ctx.globalAlpha = lineAlpha;
+              ctx.lineWidth = 0.75;
+              ctx.stroke();
+            }
           }
         }
 
-        // Connect to mouse pointer
-        const mdx = p.x - mouseRef.current.x;
-        const mdy = p.y - mouseRef.current.y;
-        const mDist = Math.hypot(mdx, mdy);
-        if (mDist < mouseDistance) {
-          const mAlpha = (1 - mDist / mouseDistance) * 0.35;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(mouseRef.current.x, mouseRef.current.y);
-          ctx.strokeStyle = '#bc13fe';
-          ctx.globalAlpha = mAlpha;
-          ctx.lineWidth = 1;
-          ctx.stroke();
+        // Connect to mouse pointer (desktop only)
+        if (!isMobile) {
+          const mdx = p.x - mouseRef.current.x;
+          const mdy = p.y - mouseRef.current.y;
+          const mDist = Math.hypot(mdx, mdy);
+          if (mDist < mouseDistance) {
+            const mAlpha = (1 - mDist / mouseDistance) * 0.35;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mouseRef.current.x, mouseRef.current.y);
+            ctx.strokeStyle = '#bc13fe';
+            ctx.globalAlpha = mAlpha;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
         }
       }
 
@@ -136,17 +148,15 @@ const BackgroundEffects: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      {/* Deep Space Ambient Glow Spots */}
-      <div className="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] bg-cyan-900/10 blur-[180px] rounded-full"></div>
-      <div className="absolute -bottom-[20%] -right-[10%] w-[65vw] h-[65vw] bg-purple-950/15 blur-[200px] rounded-full"></div>
-      <div className="absolute top-[40%] left-[60%] w-[40vw] h-[40vw] bg-indigo-950/10 blur-[160px] rounded-full"></div>
-
+    <div
+      className="fixed inset-0 z-0 pointer-events-none overflow-hidden"
+      style={{
+        background:
+          'radial-gradient(circle at 12% 15%, rgba(0, 242, 255, 0.07) 0%, transparent 45%), radial-gradient(circle at 88% 82%, rgba(188, 19, 254, 0.08) 0%, transparent 45%)',
+      }}
+    >
       {/* Interactive Cyber Constellation Canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-
-      {/* Radial Vignette Mask */}
-      <div className="absolute inset-0 bg-radial-gradient pointer-events-none opacity-40"></div>
     </div>
   );
 };
